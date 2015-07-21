@@ -17,19 +17,26 @@ import org.apache.commons.imaging.ImageReadException;
 
 import com.peterphi.std.util.HexHelper;
 
+/**
+ * 调用Linux下面的FFmpeg命令
+ *
+ * @author wanggang
+ *
+ */
 public class FFmpegEngine {
 
 	private final File ffmpeg;
 	private int limitSeconds = 0;
+
+	private static final FFmpegPPMParser PPM_PARSER = new FFmpegPPMParser();
 
 	public FFmpegEngine(final File ffmpeg) {
 		this.ffmpeg = ffmpeg;
 	}
 
 	/**
-	 * Set the number of seconds to limit video processing to; 0 for no limit
-	 *
-	 * @param limit
+	 * 设置视频处理时常限制，单位为秒;
+	 * 0代表没有限制
 	 */
 	public void setLimitSeconds(int limit) {
 		this.limitSeconds = limit;
@@ -57,16 +64,13 @@ public class FFmpegEngine {
 		}
 	}
 
-	private static final FFmpegPPMParser PPM_PARSER = new FFmpegPPMParser();
-
 	private VideoFrame parse(InputStream is) throws IOException, ImageReadException {
-		// peek to see if we're at EOF
-		// Otherwise we'll get an exception when reading the stream
+		// 查看是否处于EOF，否在读取数据流时会出现异常
 		is.mark(1);
 
 		final int read = is.read();
 		if (read == -1) {
-			return null; // at EOF
+			return null; // 处于EOF
 		} else {
 			is.reset();
 
@@ -95,11 +99,10 @@ public class FFmpegEngine {
 	}
 
 	/**
-	 * Spawn a thread to consume the contents of a stream and discard them
-	 *
-	 * @param is
+	 * 启动单个线程来消耗数据流中的内容，用完后丢弃
 	 */
 	private void eatStream(final InputStream is) {
+
 		Thread thread = new Thread(new Runnable() {
 
 			@Override
@@ -109,7 +112,7 @@ public class FFmpegEngine {
 					while (true) {
 						final int read = is.read(data);
 
-						// Die on EOF
+						// 在EOF处挂掉
 						if (read == -1)
 							break;
 					}
@@ -117,7 +120,9 @@ public class FFmpegEngine {
 					throw new IOError(e);
 				}
 			}
+
 		});
+
 		thread.setDaemon(true);
 		thread.start();
 	}
@@ -128,9 +133,13 @@ public class FFmpegEngine {
 		return pb.start();
 	}
 
+	/**
+	 * 获取FFmpeg命令
+	 * ffmpeg -i test-videos/test1.ts -vf select="eq(pict_type\\,PICT_TYPE_I)"
+	 * -vsync 2 -s 640x480 -f image2 output/thumbnails-%02d.jpeg
+	 */
 	private List<String> getFfmpegCommand(final File file) {
 		List<String> cmd = new ArrayList<>();
-
 		cmd.add(ffmpeg.getAbsolutePath());
 		if (limitSeconds > 0) {
 			cmd.add("-t");

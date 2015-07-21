@@ -10,8 +10,8 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		final FFmpegEngine ffmpeg = new FFmpegEngine(new File("/usr/bin/ffmpeg"));
 
-		// Only process 1 second
-		ffmpeg.setLimitSeconds(600);
+		// 设置处理时常，默认是全部处理
+		ffmpeg.setLimitSeconds(60);
 
 		// Write the analysis to sad.csv
 		SADCutScorePlugin plugin = new SADCutScorePlugin(new File("sad.csv"));
